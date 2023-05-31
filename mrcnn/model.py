@@ -2153,7 +2153,9 @@ class MaskRCNN(object):
         metrics. Then calls the Keras compile() function.
         """
         # Optimizer object
-        optimizer = keras.optimizers.SGD(
+        # fix error: "'SGD' object has no attribute get_updates"
+        # https://stackoverflow.com/questions/75356826/attributeerror-adam-object-has-no-attribute-get-updates
+        optimizer = tf.keras.optimizers.legacy.SGD(
             lr=learning_rate, momentum=momentum,
             clipnorm=self.config.GRADIENT_CLIP_NORM)
         # Add Losses
@@ -2346,14 +2348,9 @@ class MaskRCNN(object):
         self.set_trainable(layers)
         self.compile(learning_rate, self.config.LEARNING_MOMENTUM)
 
-        # Work-around for Windows: Keras fails on Windows when using
-        # multiprocessing workers. See discussion here:
-        # https://github.com/matterport/Mask_RCNN/issues/13#issuecomment-353124009
-        if os.name == 'nt':
-            workers = 0
-        else:
-            workers = multiprocessing.cpu_count()
-
+        # In kaggle training stucks at epoch 1 so it was needed to remove multiprocessing
+        # https://github.com/matterport/Mask_RCNN/issues/1962
+        workers = 0
         self.keras_model.fit(
             train_generator,
             initial_epoch=self.epoch,

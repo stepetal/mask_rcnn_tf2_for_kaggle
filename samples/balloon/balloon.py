@@ -159,8 +159,18 @@ class BalloonDataset(utils.Dataset):
         mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
                         dtype=np.uint8)
         for i, p in enumerate(info["polygons"]):
+        
+            # Fix of error "IndexError: index 725 is out of bounds for axis 0 with size 725"
+            # https://github.com/matterport/Mask_RCNN/issues/636
+            
             # Get indexes of pixels inside the polygon and set them to 1
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
+
+            ## Note that this modifies the existing array arr, instead of creating a result array
+            ## Ref: https://stackoverflow.com/questions/19666626/replace-all-elements-of-python-numpy-array-that-are-greater-than-some-value
+            rr[rr > mask.shape[0]-1] = mask.shape[0]-1
+            cc[cc > mask.shape[1]-1] = mask.shape[1]-1
+
             mask[rr, cc, i] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
